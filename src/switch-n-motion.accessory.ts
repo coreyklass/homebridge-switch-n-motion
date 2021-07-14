@@ -18,16 +18,10 @@ export class SwitchNMotionAccessory {
   private readonly serviceHelperCollection: ServiceHelperCollection;
 
 
-
-  private switchListenerSwitchTimeout: any;
-  private motionListenerSwitchTimeout: any;
-  private controlSwitchTimeout: any;
-
-
   private readonly userSceneSwitches: SwitchServiceHelper[];
   private readonly userSceneOccupancySensors: OccupancySensorServiceHelper[];
 
-  private readonly statelessSwitchAutoOffTimerMS = 2000;
+  private readonly statelessSwitchAutoOffTimerMS = 500;
 
 
   private readonly offOccupancySensorServiceHelpers: OccupancySensorServiceHelper[];
@@ -130,6 +124,7 @@ export class SwitchNMotionAccessory {
     controlSwitchServiceHelper.serviceDisplayName = config.controlSwitchName;
 
 
+
     // configure the night light switch
     const nightLightSwitchServiceHelper = this.serviceHelperCollection.newSwitchServiceHelper(
         ServiceCodes.NightLightSwitch,
@@ -137,6 +132,35 @@ export class SwitchNMotionAccessory {
     );
 
     nightLightSwitchServiceHelper.serviceDisplayName = config.nightLightSwitchName;
+
+
+
+
+    // configure the night light listener switch
+    const nightLightListenerSwitchServiceHelper = this.serviceHelperCollection.newSwitchServiceHelper(
+        ServiceCodes.NightLightListenerSwitch,
+        ServiceCodes.NightLightListenerSwitch
+    );
+
+    nightLightListenerSwitchServiceHelper.serviceDisplayName = config.nightLightSwitchListenerName;
+    nightLightListenerSwitchServiceHelper.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
+
+
+
+
+
+    // configure the change scene listener switch
+    const changeSceneListenerSwitchServiceHelper = this.serviceHelperCollection.newSwitchServiceHelper(
+        ServiceCodes.ChangeSceneSwitch,
+        ServiceCodes.ChangeSceneSwitch
+    );
+
+    changeSceneListenerSwitchServiceHelper.serviceDisplayName = config.changeSceneSwitchListenerName;
+    changeSceneListenerSwitchServiceHelper.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
+
+
+
+
 
 
     // configure the scene off motion sensor service
@@ -228,6 +252,20 @@ export class SwitchNMotionAccessory {
     // %%%%%%%%%%%%%%%%%
 
 
+
+    // when the night light listener switch is flipped
+    nightLightListenerSwitchServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
+      if (value) {
+        // flip the night light switch
+        nightLightSwitchServiceHelper.onState = !nightLightSwitchServiceHelper.onState;
+
+        // reconcile the occupancy sensors
+        this.reconcileOccupancySensors();
+      }
+    });
+
+
+
     // when the night light switch is flipped
     nightLightSwitchServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
       // reconcile the occupancy sensors
@@ -236,9 +274,30 @@ export class SwitchNMotionAccessory {
 
 
 
+    // when the current scene change switch is flipped
+    changeSceneListenerSwitchServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
+      if (value) {
+        this.didRequestCurrentSceneChange();
+      }
+    });
+
+
+
 
     // switch and motion listeners for turning on the control switch
-    const turnOnControlSwitchHandler = ((value: boolean) => {
+    switchListenerServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
+      if (value) {
+        // flip the control switch state
+        controlSwitchServiceHelper.onState = !controlSwitchServiceHelper.onState;
+
+        // reconcile the occupancy sensors
+        this.reconcileOccupancySensors();
+      }
+    });
+
+
+
+    motionListenerServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
       if (value) {
         if (!controlSwitchServiceHelper.onState) {
           controlSwitchServiceHelper.onState = true;
@@ -248,10 +307,6 @@ export class SwitchNMotionAccessory {
         }
       }
     });
-
-    switchListenerServiceHelper.onStateUpdateEvent.on('On', turnOnControlSwitchHandler);
-
-    motionListenerServiceHelper.onStateUpdateEvent.on('On', turnOnControlSwitchHandler);
 
 
     // listen for control switch actions
@@ -386,6 +441,26 @@ export class SwitchNMotionAccessory {
   }
 
 
+  /**
+   * Change the current scene
+   */
+  didRequestCurrentSceneChange() {
+    // which is the selected index?
+    let currentIndex = this.userSceneSwitchServiceHelperIndexTurnedOn();
+
+    if (currentIndex === null) {
+      currentIndex = 0;
+    }
+
+    let newIndex = currentIndex + 1;
+
+    if (newIndex >= this.userSceneSwitches.length) {
+      newIndex = 0;
+    }
+
+    this.turnOnOneExclusiveUserSceneSwitch(newIndex);
+  }
+
 
 
 
@@ -495,7 +570,9 @@ enum ServiceCodes {
   MotionListenerSwitch = 'motion-listener-switch',
   ControlSwitch = 'control-switch',
   NightLightSwitch = 'night-light-switch',
+  NightLightListenerSwitch = 'night-light-listener-switch',
   UserSceneSwitch = 'user-scene-switch',
+  ChangeSceneSwitch = 'change-scene-switch',
 
   OffSceneOccupancySensor = 'off-scene-occupancy-sensor',
   NightLightSceneOccupancySensor = 'night-light-scene-occupancy-sensor',

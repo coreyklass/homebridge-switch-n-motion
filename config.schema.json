@@ -68,6 +68,22 @@
               "required": true
             },
 
+            "nightLightSwitchListenerName": {
+              "title": "Night Light Switch Listener Name",
+              "description": "",
+              "default": "Night Light Switch Listener",
+              "type": "string",
+              "required": true
+            },
+
+            "changeSceneSwitchListenerName": {
+              "title": "Change Scene Switch Listener Name",
+              "description": "",
+              "default": "Change Scene Switch Listener",
+              "type": "string",
+              "required": true
+            },
+
             "sceneOffMotionSensorName": {
               "title": "Scene Off Occupancy Detector Name",
               "description": "",

@@ -1,0 +1,119 @@
+{
+  "pluginAlias": "switch-n-motion-platform",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+
+      "accessoryInstances": {
+        "title": "Switch n Motion Instances",
+        "type": "array",
+        "items": {
+
+          "title": "Switch n Motion Instance",
+          "type": "object",
+          "properties": {
+
+            "accessoryUniqueID": {
+              "title": "Unique ID",
+              "description": "",
+              "type": "number",
+              "required": true
+            },
+
+            "switchInstanceName": {
+              "title": "Switch n Motion Instance Name",
+              "description": "",
+              "type": "string",
+              "required": true
+            },
+
+            "switchListenerName": {
+              "title": "Switch Listener Name",
+              "description": "",
+              "default": "Switch Listener",
+              "type": "string",
+              "required": true
+            },
+
+            "motionListenerName": {
+              "title": "Motion Listener Name",
+              "description": "",
+              "default": "Motion Listener",
+              "type": "string",
+              "required": true
+            },
+
+            "controlSwitchName": {
+              "title": "Control Switch Name",
+              "description": "",
+              "default": "Control Switch",
+              "type": "string",
+              "required": true
+            },
+
+            "controlSwitchAutoOffTimerMS": {
+              "title": "Control Switch Auto-Shutoff (MS)",
+              "description": "",
+              "type": "number",
+              "default": 10000
+            },
+
+            "nightLightSwitchName": {
+              "title": "Night Light Switch Name",
+              "description": "",
+              "default": "Night Light Switch",
+              "type": "string",
+              "required": true
+            },
+
+            "sceneOffMotionSensorName": {
+              "title": "Scene Off Occupancy Detector Name",
+              "description": "",
+              "default": "Scene Off Occupancy Detector",
+              "type": "string",
+              "required": true
+            },
+
+            "sceneNightLightMotionSensorName": {
+              "title": "Scene Night Light Occupancy Detector Name",
+              "description": "",
+              "default": "Scene Night Light Occupancy Detector",
+              "type": "string",
+              "required": true
+            },
+
+
+            "sceneModeSwitches": {
+              "title": "Scene Modes",
+              "type": "array",
+              "items": {
+
+                "title": "Scene Mode",
+                "type": "object",
+                "properties": {
+
+                  "sceneModeID": {
+                    "title": "Unique Scene ID",
+                    "description": "",
+                    "type": "number",
+                    "required": true
+                  },
+
+                  "switchInstanceName": {
+                    "title": "Scene Name",
+                    "description": "",
+                    "type": "string",
+                    "required": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+    }
+  }
+}

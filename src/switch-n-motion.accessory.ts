@@ -24,6 +24,15 @@ export class SwitchNMotionAccessory {
   private controlSwitchTimeout: any;
 
 
+  private readonly userSceneSwitches: SwitchServiceHelper[];
+  private readonly userSceneOccupancySensors: OccupancySensorServiceHelper[];
+
+  private readonly statelessSwitchAutoOffTimerMS = 2000;
+
+
+  private readonly offOccupancySensorServiceHelpers: OccupancySensorServiceHelper[];
+  private readonly nightLightSwitchServiceHelper: SwitchServiceHelper;
+  private readonly controlSwitchServiceHelper: SwitchServiceHelper;
 
   /**
    *
@@ -94,6 +103,7 @@ export class SwitchNMotionAccessory {
     );
 
     switchListenerServiceHelper.serviceDisplayName = config.switchListenerName;
+    switchListenerServiceHelper.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
 
 
 
@@ -104,6 +114,9 @@ export class SwitchNMotionAccessory {
     );
 
     motionListenerServiceHelper.serviceDisplayName = config.motionListenerName;
+    motionListenerServiceHelper.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
+
+
 
 
 
@@ -126,7 +139,6 @@ export class SwitchNMotionAccessory {
     nightLightSwitchServiceHelper.serviceDisplayName = config.nightLightSwitchName;
 
 
-
     // configure the scene off motion sensor service
     const sceneOffOccupancySensorServiceHelper = this.serviceHelperCollection.newOccupancySensorServiceHelper(
         ServiceCodes.OffSceneOccupancySensor,
@@ -142,27 +154,25 @@ export class SwitchNMotionAccessory {
         ServiceCodes.NightLightSceneOccupancySensor
     );
 
-    sceneNightLightOccupancySensorServiceHelper.serviceDisplayName = config.sceneNightMotionSensorName;
+    sceneNightLightOccupancySensorServiceHelper.serviceDisplayName = config.sceneNightLightMotionSensorName;
+
+
+    const offOccupancySensorServiceHelpers = [
+      sceneOffOccupancySensorServiceHelper,
+      sceneNightLightOccupancySensorServiceHelper
+    ];
+
 
 
     // loop over the scene configs and put in some user ones
-    const sceneConfigs = ([] as SceneControlSwitchInstanceConfig[]);
+    const sceneConfigs = (config.sceneModeSwitches || []);
 
-    sceneConfigs.push({
-      sceneModeID: 99999,
-      switchInstanceName: 'Default Scene'
-    });
-
-
-
-    (config.sceneModeSwitches || []).forEach((indexConfig) => {
-      sceneConfigs.push(indexConfig);
-    });
+    this.userSceneSwitches = [];
+    this.userSceneOccupancySensors = [];
 
 
     for (let sceneIndex = 0; sceneIndex < sceneConfigs.length; sceneIndex++) {
       const indexConfig = sceneConfigs[sceneIndex];
-
 
       // configure a scene motion sensor service
       const userOccupancySensorKey = this.buildKeyForSceneIndex(sceneIndex) + '-' + ServiceCodes.UserSceneOccupancySensor;
@@ -173,6 +183,9 @@ export class SwitchNMotionAccessory {
       );
 
       userSceneOccupancySensorServiceHelper.serviceDisplayName = indexConfig.switchInstanceName;
+
+      this.userSceneOccupancySensors.push(userSceneOccupancySensorServiceHelper);
+
 
 
       // configure a scene switch
@@ -185,23 +198,138 @@ export class SwitchNMotionAccessory {
 
       userSceneSwitchServiceHelper.serviceDisplayName = indexConfig.switchInstanceName;
 
-      // when the user scene switch is turned on, call the handler
+      this.userSceneSwitches.push(userSceneSwitchServiceHelper);
+
+
+      // when the user scene switch is turned on or off, call the handler
       userSceneSwitchServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
         this.writeLog('User scene switch State Update Event Fired: ' + String(sceneIndex) + ' ' + value);
 
         if (value) {
           this.didTurnOnUserSceneSwitch(sceneIndex);
+
         } else {
           this.didTurnOffUserSceneSwitch(sceneIndex);
+
+          // if there are no user switches turned on, turn the default on
+          if (!this.userSceneSwitchServiceHelperTurnedOn()) {
+            this.userDefaultSceneSwitchServiceHelper().onState = true;
+          }
         }
+
+        this.reconcileOccupancySensors();
       });
     }
 
 
 
+    // %%%%%%%%%%%%%%%%%
+    // set up some logic
+    // %%%%%%%%%%%%%%%%%
 
+
+    // when the night light switch is flipped
+    nightLightSwitchServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
+      // reconcile the occupancy sensors
+      this.reconcileOccupancySensors();
+    });
+
+
+
+
+    // switch and motion listeners for turning on the control switch
+    const turnOnControlSwitchHandler = ((value: boolean) => {
+      if (value) {
+        if (!controlSwitchServiceHelper.onState) {
+          controlSwitchServiceHelper.onState = true;
+
+          // reconcile the occupancy sensors
+          this.reconcileOccupancySensors();
+        }
+      }
+    });
+
+    switchListenerServiceHelper.onStateUpdateEvent.on('On', turnOnControlSwitchHandler);
+
+    motionListenerServiceHelper.onStateUpdateEvent.on('On', turnOnControlSwitchHandler);
+
+
+    // listen for control switch actions
+    controlSwitchServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
+      // if the switch was turned on
+      if (value) {
+        this.executeTurnOn();
+
+      // if the switch was turned off
+      } else {
+        this.executeTurnOff();
+      }
+    });
+
+
+    // if there are no user switches turned on, turn the default on
+    if (!this.userSceneSwitchServiceHelperTurnedOn()) {
+      this.userDefaultSceneSwitchServiceHelper().onState = true;
+    }
+
+
+
+    this.nightLightSwitchServiceHelper = nightLightSwitchServiceHelper;
+    this.controlSwitchServiceHelper = controlSwitchServiceHelper;
+    this.offOccupancySensorServiceHelpers = offOccupancySensorServiceHelpers;
+
+
+    setTimeout(() => {
+      this.reconcileOccupancySensors();
+    });
 
   }
+
+
+  /**
+   * Returns the default scene switch
+   */
+  userDefaultSceneSwitchServiceHelper(): SwitchServiceHelper {
+    return this.userSceneSwitches[0];
+  }
+
+
+
+  /**
+   * Returns the scene default occupancy sensor
+   */
+  userDefaultSceneOccupancySensorServiceHelper(): OccupancySensorServiceHelper {
+    return this.userSceneOccupancySensors[0];
+  }
+
+
+
+  /**
+   * Returns the user scene switch service helper index that's turned on
+   */
+  userSceneSwitchServiceHelperIndexTurnedOn(): number | null {
+    let onIndex: number | null = null;
+
+    for (let testIndex = 0; testIndex < this.userSceneSwitches.length; testIndex++) {
+      if (this.userSceneSwitches[testIndex].onState) {
+        onIndex = testIndex;
+      }
+    }
+
+    return onIndex;
+  }
+
+
+
+
+  /**
+   * Returns the user scene switch service helper that's turned on
+   */
+  userSceneSwitchServiceHelperTurnedOn(): SwitchServiceHelper | null {
+    const index = this.userSceneSwitchServiceHelperIndexTurnedOn();
+    return (index !== null ? this.userSceneSwitches[index] : null);
+  }
+
 
 
 
@@ -240,6 +368,23 @@ export class SwitchNMotionAccessory {
   }
 
 
+  /**
+   * Turns on one exclusive user scene switch
+   * @param index
+   */
+  turnOnOneExclusiveUserSceneSwitch(index: number) {
+    SwitchServiceHelper.turnOnOneExclusiveSwitch(this.userSceneSwitches, index);
+  }
+
+
+  /**
+   * Turns on one exclusive user scene occpancy sensor
+   * @param index
+   */
+  turnOnOneExclusiveUserSceneOccupancySensor(index: number) {
+    OccupancySensorServiceHelper.turnOnOneExclusiveOccupancySensor(this.userSceneOccupancySensors, index);
+  }
+
 
 
 
@@ -251,32 +396,14 @@ export class SwitchNMotionAccessory {
   didTurnOnUserSceneSwitch(index: number) {
     this.writeLog('User Scene Switch ' + String(index) + ' turned On');
 
-    // turn on the corresponding occupancy sensor
-    const occupancySensorKey = this.buildUserSceneOccupancySensorKeyForIndex(index);
-    const occupancyServiceHelper = (this.serviceHelperCollection.serviceHelperForKey(occupancySensorKey) as OccupancySensorServiceHelper);
-
-    if (occupancyServiceHelper && !occupancyServiceHelper.occupancyState) {
-      occupancyServiceHelper.occupancyState = true;
-    }
-
-
     // turn off the other user scene switches
-    const sceneConfigs = (this.config.sceneModeSwitches || []) as SceneControlSwitchInstanceConfig[];
+    this.turnOnOneExclusiveUserSceneSwitch(index);
 
-    for (let sceneIndex = 0; sceneIndex < sceneConfigs.length; sceneIndex++) {
-      if (sceneIndex !== index) {
-        const switchKey = this.buildUserSceneSwitchKeyForIndex(sceneIndex);
-
-        const serviceHelper = (this.serviceHelperCollection.serviceHelperForKey(switchKey) as SwitchServiceHelper);
-
-        if (serviceHelper && serviceHelper.onState) {
-          serviceHelper.onState = false;
-        }
-      }
-
-    }
-
+    // turn on the corresponding occupancy sensor
+    this.turnOnOneExclusiveUserSceneOccupancySensor(index);
   }
+
+
 
 
   /**
@@ -296,6 +423,66 @@ export class SwitchNMotionAccessory {
     }
      
   }
+
+
+  /**
+   * Reconciles the occupancy sensors
+   */
+  reconcileOccupancySensors() {
+    if (this.controlSwitchServiceHelper) {
+      if (this.controlSwitchServiceHelper.onState) {
+        this.executeTurnOn();
+
+      } else {
+        this.executeTurnOff();
+      }
+    }
+  }
+
+
+  /**
+   * Execute the turn on actions
+   */
+  executeTurnOn() {
+    // turn off the "off" sensors
+    this.offOccupancySensorServiceHelpers.forEach((indexHelper: OccupancySensorServiceHelper) => {
+      if (indexHelper.occupancyState) {
+        indexHelper.occupancyState = false;
+      }
+    });
+
+    // turn on the selected sensor
+    const turnedOnHelperIndex = this.userSceneSwitchServiceHelperIndexTurnedOn();
+
+    if (turnedOnHelperIndex !== null) {
+      OccupancySensorServiceHelper.turnOnOneExclusiveOccupancySensor(
+          this.userSceneOccupancySensors,
+          turnedOnHelperIndex
+      );
+    }  }
+
+
+
+  /**
+   * Execute the turn off actions
+   */
+  executeTurnOff() {
+    // turn off all of the user scene sensors
+    this.userSceneOccupancySensors.forEach((indexHelper: OccupancySensorServiceHelper) => {
+      if (indexHelper.occupancyState) {
+        indexHelper.occupancyState = false;
+      }
+    });
+
+    // turn on an "off" sensor
+    const turnOnHelperIndex = (this.nightLightSwitchServiceHelper.onState ? 1 : 0);
+
+    OccupancySensorServiceHelper.turnOnOneExclusiveOccupancySensor(
+        this.offOccupancySensorServiceHelpers,
+        turnOnHelperIndex
+    );
+  }
+
 
 
 }

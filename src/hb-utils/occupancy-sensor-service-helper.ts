@@ -58,6 +58,46 @@ export class OccupancySensorServiceHelper extends ServiceHelper {
   }
 
 
+
+
+  /**
+   * Turns on one exclusive occupancy sensor
+   * @param sensorHelpers
+   * @param exceptionIndex
+   */
+  static turnOnOneExclusiveOccupancySensor(sensorHelpers: OccupancySensorServiceHelper[], exceptionIndex: number) {
+    const exceptionTester = ((index: number): boolean => {
+      return (index === exceptionIndex);
+    });
+
+    const exceptionSetter = ((helper: ServiceHelper) => {
+      const sensorHelper = (helper as OccupancySensorServiceHelper);
+
+      if (!sensorHelper.occupancyState) {
+        sensorHelper.occupancyState = true;
+      }
+    });
+
+    const defaultSetter = ((helper: ServiceHelper) => {
+      const sensorHelper = (helper as OccupancySensorServiceHelper);
+
+      if (sensorHelper.occupancyState) {
+        sensorHelper.occupancyState = false;
+      }
+    });
+
+    ServiceHelper.setAllServicesExceptOne(
+        sensorHelpers,
+        exceptionTester,
+        exceptionSetter,
+        defaultSetter
+    );
+  }
+
+
+
+
+
   /**
    * Occupancy state was requested
    * @private

@@ -40,6 +40,14 @@ export class SwitchServiceHelper extends ServiceHelper {
 
 
   /**
+   * Auto-Off Timer
+   */
+  autoOffTimerMS: number | null = null;
+
+
+
+
+  /**
    * Event Emitter for when the state changes
    */
   onStateUpdateEvent = new EventEmitter();
@@ -63,6 +71,46 @@ export class SwitchServiceHelper extends ServiceHelper {
   }
 
 
+
+  /**
+   * Turns on one exclusive switch
+   * @param switchHelpers
+   * @param exceptionIndex
+   */
+  static turnOnOneExclusiveSwitch(switchHelpers: SwitchServiceHelper[], exceptionIndex: number) {
+    const exceptionTester = ((index: number): boolean => {
+      return (index === exceptionIndex);
+    });
+
+    const exceptionSetter = ((helper: ServiceHelper) => {
+      const switchHelper = (helper as SwitchServiceHelper);
+
+      if (!switchHelper.onState) {
+        switchHelper.onState = true;
+      }
+    });
+
+    const defaultSetter = ((helper: ServiceHelper) => {
+      const switchHelper = (helper as SwitchServiceHelper);
+
+      if (switchHelper.onState) {
+        switchHelper.onState = false;
+      }
+    });
+
+    ServiceHelper.setAllServicesExceptOne(
+        switchHelpers,
+        exceptionTester,
+        exceptionSetter,
+        defaultSetter
+    );
+  }
+
+
+
+
+
+
   /**
    * On state was requested
    * @private
@@ -78,11 +126,32 @@ export class SwitchServiceHelper extends ServiceHelper {
    * @private
    */
   private didChangeOnState(value: CharacteristicValue) {
-    this.onStateUpdateEvent.emit('On', value);
+    // if the switch was turned on, reset the auto-off timer
+    if (value) {
+      this.resetSwitchAutoOffTimer();
+    } else {
+      this.clearTimer();
+    }
+
+    setTimeout(() => {
+      this.onStateUpdateEvent.emit('On', value);
+    });
   }
 
 
 
+  /**
+   * Resets the auto-off timer
+   */
+  resetSwitchAutoOffTimer() {
+    if (this.autoOffTimerMS !== null) {
+      this.resetTimer(() => {
+        if (this.onState) {
+          this.onState = false;
+        }
+      }, this.autoOffTimerMS);
+    }
+  }
 
 
 

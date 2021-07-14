@@ -15,7 +15,7 @@ export interface SwitchNMonitorInstanceConfig {
   nightLightSwitchName: string;
 
   sceneOffMotionSensorName: string;
-  sceneNightMotionSensorName: string;
+  sceneNightLightMotionSensorName: string;
 
   sceneModeSwitches: SceneControlSwitchInstanceConfig[];
 

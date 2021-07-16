@@ -32,10 +32,7 @@ export class SwitchServiceHelper extends ServiceHelper {
   set onState(value: boolean) {
     this.service.getCharacteristic(this.onCharacteristic).updateValue(value as CharacteristicValue);
 
-    // if the switch was turned off, fire an event
-    if (!value) {
-      this.didChangeOnState(value);
-    }
+    this.didChangeOnState(value);
   }
 
 
@@ -129,6 +126,7 @@ export class SwitchServiceHelper extends ServiceHelper {
     // if the switch was turned on, reset the auto-off timer
     if (value) {
       this.resetSwitchAutoOffTimer();
+
     } else {
       this.clearTimer();
     }

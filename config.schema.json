@@ -60,6 +60,20 @@
               "default": 10000
             },
 
+            "controlSwitchOffIgnoreMotionListenerSwitchName": {
+              "title": "Ignore Motion Listener After Control Switch Off Name",
+              "description": "",
+              "type": "string",
+              "default": "Ignore Motion Listener Switch"
+            },
+
+            "controlSwitchOffIgnoreMotionListenerTimerMS": {
+              "title": "Ignore Motion Listener After Control Switch Off Timer (MS)",
+              "description": "",
+              "type": "number",
+              "default": 5000
+            },
+
             "nightLightSwitchName": {
               "title": "Night Light Switch Name",
               "description": "",

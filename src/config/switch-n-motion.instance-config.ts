@@ -9,8 +9,10 @@ export interface SwitchNMonitorInstanceConfig {
   switchListenerName: string;
   motionListenerName: string;
 
-  controlSwitchAutoOffTimerMS: number;
   controlSwitchName: string;
+  controlSwitchAutoOffTimerMS: number;
+  controlSwitchOffIgnoreMotionListenerSwitchName: string;
+  controlSwitchOffIgnoreMotionListenerTimerMS: number;
 
   nightLightSwitchName: string;
   nightLightSwitchListenerName: string;

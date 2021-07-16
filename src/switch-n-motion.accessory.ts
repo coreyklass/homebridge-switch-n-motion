@@ -28,16 +28,6 @@ export class SwitchNMotionAccessory {
   private readonly nightLightSwitchServiceHelper: SwitchServiceHelper;
   private readonly controlSwitchServiceHelper: SwitchServiceHelper;
 
-  /**
-   *
-   * @private
-   */
-  private readonly Chars = {
-    On: this.platform.Characteristic.On,
-    OccupancyDetected: this.platform.Characteristic.OccupancyDetected,
-    Name: this.platform.Characteristic.Name
-  };
-
 
 
   /**
@@ -109,6 +99,20 @@ export class SwitchNMotionAccessory {
 
     motionListenerServiceHelper.serviceDisplayName = config.motionListenerName;
     motionListenerServiceHelper.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
+
+
+
+
+
+    // configure the motion sensor listener ignore switch
+    const motionListenerIgnoreServiceHelper = this.serviceHelperCollection.newSwitchServiceHelper(
+        ServiceCodes.ControlSwitchOffIgnoreMotionListenerSwitch,
+        ServiceCodes.ControlSwitchOffIgnoreMotionListenerSwitch
+    );
+
+    motionListenerIgnoreServiceHelper.serviceDisplayName = config.controlSwitchOffIgnoreMotionListenerSwitchName;
+    motionListenerIgnoreServiceHelper.autoOffTimerMS = config.controlSwitchOffIgnoreMotionListenerTimerMS;
+
 
 
 
@@ -298,8 +302,10 @@ export class SwitchNMotionAccessory {
 
 
     motionListenerServiceHelper.onStateUpdateEvent.on('On', (value: boolean) => {
+      // if occupancy turned on
       if (value) {
-        if (!controlSwitchServiceHelper.onState) {
+        // if the control switch is not on and the motion listener ignore switch is not on
+        if (!controlSwitchServiceHelper.onState && !motionListenerIgnoreServiceHelper.onState) {
           controlSwitchServiceHelper.onState = true;
 
           // reconcile the occupancy sensors
@@ -307,6 +313,8 @@ export class SwitchNMotionAccessory {
         }
       }
     });
+
+
 
 
     // listen for control switch actions
@@ -317,15 +325,22 @@ export class SwitchNMotionAccessory {
 
       // if the switch was turned off
       } else {
+        // turn on the motion listener ignore switch
+        motionListenerIgnoreServiceHelper.onState = true;
+
+        // execute the turn off action
         this.executeTurnOff();
       }
     });
+
+
 
 
     // if there are no user switches turned on, turn the default on
     if (!this.userSceneSwitchServiceHelperTurnedOn()) {
       this.userDefaultSceneSwitchServiceHelper().onState = true;
     }
+
 
 
 
@@ -459,6 +474,11 @@ export class SwitchNMotionAccessory {
     }
 
     this.turnOnOneExclusiveUserSceneSwitch(newIndex);
+
+    // if the control switch is off, turn it on
+    if (!this.controlSwitchServiceHelper.onState) {
+      this.controlSwitchServiceHelper.onState = true;
+    }
   }
 
 
@@ -573,6 +593,7 @@ enum ServiceCodes {
   NightLightListenerSwitch = 'night-light-listener-switch',
   UserSceneSwitch = 'user-scene-switch',
   ChangeSceneSwitch = 'change-scene-switch',
+  ControlSwitchOffIgnoreMotionListenerSwitch = 'control-switch-off-ignore-motion-listener-switch',
 
   OffSceneOccupancySensor = 'off-scene-occupancy-sensor',
   NightLightSceneOccupancySensor = 'night-light-scene-occupancy-sensor',

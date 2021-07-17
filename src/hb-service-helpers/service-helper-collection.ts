@@ -1,10 +1,9 @@
 
-import {Service, CharacteristicValue, Characteristic, API, PlatformAccessory, DynamicPlatformPlugin} from 'homebridge';
+import {Service, CharacteristicValue, Characteristic, API, PlatformAccessory, Logger} from 'homebridge';
 import {PlatformPlugin} from 'homebridge/lib/api';
 import {WithUUID} from 'hap-nodejs/dist/types';
 import {ServiceHelper} from './service-helper';
-import {SwitchServiceHelper} from './switch-service-helper';
-import {OccupancySensorServiceHelper} from './occupancy-sensor-service-helper';
+import {OnOffServiceHelper} from './on-off-service-helper';
 
 
 export class ServiceHelperCollection {
@@ -21,10 +20,12 @@ export class ServiceHelperCollection {
    * Constructor
    * @param platform
    * @param api
+   * @param log
    * @param accessory
    */
   constructor(private platform: PlatformPlugin,
               private api: API,
+              private log: Logger,
               private accessory: PlatformAccessory) {
     this._serviceHelpersByKey = {};
   }
@@ -129,12 +130,13 @@ export class ServiceHelperCollection {
 
 
   /**
-   * Creates a new Switch Service Helper
+   * Creates a new On/Off Service Helper
    * @param key
    * @param serviceIdentifier
+   * @param serviceType
    */
-  newSwitchServiceHelper(key: string, serviceIdentifier: string): SwitchServiceHelper {
-    const helper = new SwitchServiceHelper(this.api, this.accessory, serviceIdentifier);
+  newOnOffServiceHelper(key: string, serviceIdentifier: string, serviceType: Service | typeof Service): OnOffServiceHelper {
+    const helper = new OnOffServiceHelper(this.api, this.log, this.accessory, serviceIdentifier, serviceType);
 
     this._serviceHelpersByKey[key] = helper;
 
@@ -142,18 +144,7 @@ export class ServiceHelperCollection {
   }
 
 
-  /**
-   * Creates a new Occupancy Sensor Service Helper
-   * @param key
-   * @param serviceIdentifier
-   */
-  newOccupancySensorServiceHelper(key: string, serviceIdentifier: string): OccupancySensorServiceHelper {
-    const helper = new OccupancySensorServiceHelper(this.api, this.accessory, serviceIdentifier);
 
-    this._serviceHelpersByKey[key] = helper;
-
-    return helper;
-  }
 
 
 

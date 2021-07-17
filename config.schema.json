@@ -29,87 +29,87 @@
               "required": true
             },
 
-            "switchListenerName": {
-              "title": "Switch Listener Name",
-              "description": "",
-              "default": "Switch Listener",
+            "masterControlSwitchName": {
+              "title": "Master Control Switch Name",
+              "description": "This switch is the master control for whether the system is in the ON or OFF state. You will not usually need to create HomeKit automations against this switch directly, but is exposed for convenience.",
+              "default": "Master Control Switch",
               "type": "string",
               "required": true
             },
 
-            "motionListenerName": {
-              "title": "Motion Listener Name",
-              "description": "",
-              "default": "Motion Listener",
+            "switchListenerTriggerSwitchName": {
+              "title": "Switch Listener Trigger Switch Name",
+              "description": "Create a HomeKit automation to turn this switch ON when your button is pressed (it will automatically turn off). When turned ON, the Master Control Switch state will be flipped (OFF to ON / ON to OFF).",
+              "default": "Switch Listener Trigger",
               "type": "string",
               "required": true
             },
 
-            "controlSwitchName": {
-              "title": "Control Switch Name",
-              "description": "",
-              "default": "Control Switch",
+            "motionListenerTriggerSwitch": {
+              "title": "Motion Listener Trigger Switch Name",
+              "description": "Create a HomeKit automation to turn this switch ON when your motion sensor is triggered (it will automatically turn off). Turning this switch ON will turn the Control Switch ON.",
+              "default": "Motion Listener Trigger",
               "type": "string",
               "required": true
             },
 
-            "controlSwitchAutoOffTimerMS": {
+            "masterControlSwitchAutoOffTimerMS": {
               "title": "Control Switch Auto-Shutoff (MS)",
               "description": "",
               "type": "number",
               "default": 10000
             },
 
-            "controlSwitchOffIgnoreMotionListenerSwitchName": {
-              "title": "Ignore Motion Listener After Control Switch Off Name",
-              "description": "",
+            "motionListenerIgnoreSwitchName": {
+              "title": "Motion Listener Ignore Switch Name",
+              "description": "After the Master Control Switch is turned OFF, this switch automatically turns ON to prevent the motion sensor from triggering a Master Control Switch ON event (eg pressing a button to turn the Master Control Switch OFF but you need a delay to move past the motion sensor to leave). It will automatically turn OFF after a configurable amount of time. You will not usually need to create HomeKit automations against this switch directly.",
               "type": "string",
-              "default": "Ignore Motion Listener Switch"
+              "default": "Motion Listener Ignore Switch"
             },
 
-            "controlSwitchOffIgnoreMotionListenerTimerMS": {
-              "title": "Ignore Motion Listener After Control Switch Off Timer (MS)",
-              "description": "",
+            "motionListenerIgnoreSwitchTimerMS": {
+              "title": "Motion Listener Ignore Switch Timer (MS)",
+              "description": "This specifies the amount of time (in milliseconds) after the Master Control Switch is turned OFF that the motion sensor trigger should be ignored. This is an auto-off delay for the Motion Listener Ignore Switch.",
               "type": "number",
               "default": 5000
             },
 
-            "nightLightSwitchName": {
-              "title": "Night Light Switch Name",
-              "description": "",
-              "default": "Night Light Switch",
+            "nightLightControlSwitchName": {
+              "title": "Night Light Control Switch Name",
+              "description": "This switch controls whether the system is in Night Light mode. When Night Light mode is ON, turning the Control Switch OFF will trigger the Night Light motion sensor instead of the Off motion sensor. You can create a HomeKit automation to turn this ON/OFF based on sunrise/sunset, for example.",
+              "default": "Night Light Control Switch",
               "type": "string",
               "required": true
             },
 
-            "nightLightSwitchListenerName": {
-              "title": "Night Light Switch Listener Name",
-              "description": "",
-              "default": "Night Light Switch Listener",
+            "nightLightTriggerSwitchName": {
+              "title": "Night Light Trigger Switch Name",
+              "description": "This is a convenience stateless switch for turning Night Light mode ON or OFF. You can create a HomeKit automation when your button is pressed to turn this switch ON, which will turn the Night Light mode ON if it's off and turn if OFF if it's on. ",
+              "default": "Night Light Trigger Switch",
               "type": "string",
               "required": true
             },
 
-            "changeSceneSwitchListenerName": {
-              "title": "Change Scene Switch Listener Name",
-              "description": "",
-              "default": "Change Scene Switch Listener",
+            "changeSceneTriggerSwitchName": {
+              "title": "Change Scene Trigger Switch Name",
+              "description": "This is a stateless switch that will rotate through the available user scene switches. Create a HomeKit automation from a button press to turn this switch on, allowing the user to configure the scene",
+              "default": "Change Scene Trigger Switch",
               "type": "string",
               "required": true
             },
 
             "sceneOffMotionSensorName": {
-              "title": "Scene Off Occupancy Detector Name",
-              "description": "",
-              "default": "Scene Off Occupancy Detector",
+              "title": "Scene Off Sensor Name",
+              "description": "When the system is OFF and NOT in Night Light mode, this occupancy detector is triggered. Create a HomeKit automation to turn your lights off when this occupancy detector is triggered.",
+              "default": "Scene Off Sensor",
               "type": "string",
               "required": true
             },
 
             "sceneNightLightMotionSensorName": {
-              "title": "Scene Night Light Occupancy Detector Name",
-              "description": "",
-              "default": "Scene Night Light Occupancy Detector",
+              "title": "Scene Night Light Sensor Name",
+              "description": "When the system is OFF and it is in Night Light mode, this occupancy detector is triggered. Create a HomeKit automation to turn your lights to Night Light mode when this occupancy detector is triggered.",
+              "default": "Scene Night Light Sensor",
               "type": "string",
               "required": true
             },

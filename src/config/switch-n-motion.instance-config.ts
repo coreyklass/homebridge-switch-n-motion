@@ -6,18 +6,18 @@ export interface SwitchNMonitorInstanceConfig {
   accessoryUniqueID: number;
   switchInstanceName: string;
 
-  switchListenerName: string;
-  motionListenerName: string;
+  switchListenerTriggerSwitchName: string;
+  motionListenerTriggerSwitch: string;
 
-  controlSwitchName: string;
+  masterControlSwitchName: string;
   controlSwitchAutoOffTimerMS: number;
-  controlSwitchOffIgnoreMotionListenerSwitchName: string;
-  controlSwitchOffIgnoreMotionListenerTimerMS: number;
+  motionListenerIgnoreSwitchName: string;
+  motionListenerIgnoreSwitchTimerMS: number;
 
-  nightLightSwitchName: string;
-  nightLightSwitchListenerName: string;
+  nightLightControlSwitchName: string;
+  nightLightTriggerSwitchName: string;
 
-  changeSceneSwitchListenerName: string;
+  changeSceneTriggerSwitchName: string;
 
   sceneOffMotionSensorName: string;
   sceneNightLightMotionSensorName: string;

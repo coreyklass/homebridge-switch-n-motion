@@ -162,19 +162,8 @@ export class OnOffServiceHelper extends ServiceHelper {
    * @private
    */
   private didSetCharacteristicValue(onStateValue: CharacteristicValue) {
-    this.log.debug('didSetCharacteristicValue() : ' + this.serviceDisplayName + ' : StateSet = ' + String(onStateValue) + ' : CurrentState = ' + String(this.onState));
-
-    // if the switch was turned on, reset the auto-off timer
-    if (onStateValue) {
-      this.resetAutoOffTimer();
-
-    } else {
-      this.autoOffTimer.clearTimer();
-    }
-
-    // loop over the state change handlers and process them
-    this._stateChangeHandlers.forEach((indexHandler: (value: boolean) => void) => {
-      indexHandler(onStateValue as boolean);
+    this.didUpdateStateValue(onStateValue).then(() => {
+      this.log.debug('didSetCharacteristicValue() : ' + this.serviceDisplayName + ' : StateSet = ' + String(onStateValue) + ' : CurrentState = ' + String(this.onState));
     });
   }
 
@@ -186,21 +175,36 @@ export class OnOffServiceHelper extends ServiceHelper {
    * @private
    */
   private didSetOnState(onStateValue: boolean) {
-    this.log.debug('didSetOnState() : ' + this.serviceDisplayName + ' : StateSet = ' + String(onStateValue) + ' : CurrentState = ' + String(this.onState));
-
-    // if the switch was turned on, reset the auto-off timer
-    if (onStateValue) {
-      this.resetAutoOffTimer();
-
-    } else {
-      this.autoOffTimer.clearTimer();
-    }
-
-    // loop over the state change handlers and process them
-    this._stateChangeHandlers.forEach((indexHandler: (value: boolean) => void) => {
-      indexHandler(onStateValue as boolean);
+    this.didUpdateStateValue(onStateValue).then(() => {
+      this.log.debug('didSetOnState() : ' + this.serviceDisplayName + ' : StateSet = ' + String(onStateValue) + ' : CurrentState = ' + String(this.onState));
     });
   }
+
+
+
+
+
+  /**
+   * The state value was updated; runs async so updates are reflected everywhere
+   * @param newValue
+   */
+  async didUpdateStateValue(newValue: boolean | CharacteristicValue) {
+    await setTimeout(() => {
+      // if the switch was turned on, reset the auto-off timer
+      if (newValue) {
+        this.resetAutoOffTimer();
+
+      } else {
+        this.autoOffTimer.clearTimer();
+      }
+
+      // loop over the state change handlers and process them
+      this._stateChangeHandlers.forEach((indexHandler: (value: boolean) => void) => {
+        indexHandler(newValue as boolean);
+      });
+    });
+  }
+
 
 
 

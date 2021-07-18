@@ -112,7 +112,18 @@ export class SwitchNMotionAccessory {
     );
 
     motionListenerIgnoreSwitch.serviceDisplayName = config.motionListenerIgnoreSwitchName;
-    motionListenerIgnoreSwitch.autoOffTimerMS = config.motionListenerIgnoreSwitchTimerMS;
+
+
+
+    // configure the motion sensor listener ignore timer switch
+    const motionListenerIgnoreTimerSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
+        ServiceCodes.MotionListenerIgnoreTimerSwitch,
+        ServiceCodes.MotionListenerIgnoreTimerSwitch,
+        platform.api.hap.Service.Switch
+    );
+
+    motionListenerIgnoreTimerSwitch.serviceDisplayName = config.motionListenerIgnoreSwitchName + ' Timer';
+    motionListenerIgnoreTimerSwitch.autoOffTimerMS = config.motionListenerIgnoreSwitchTimerMS;
 
 
 
@@ -287,9 +298,13 @@ export class SwitchNMotionAccessory {
     motionListenerTriggerSwitch.registerStateChangeHandler((value: boolean) => {
       // if occupancy turned on
       if (value) {
+        const ignoreMotionFlag =
+            motionListenerIgnoreSwitch.onState ||
+            motionListenerIgnoreTimerSwitch.onState;
+
         // if the master control switch is not on and the motion listener ignore switch is not on
         //   eg. we're ignoring the motion sensor for X time
-        if (!masterControlSwitch.onState && !motionListenerIgnoreSwitch.onState) {
+        if (!masterControlSwitch.onState && !ignoreMotionFlag) {
           masterControlSwitch.onState = true;
 
           // reconcile the occupancy sensors
@@ -343,8 +358,8 @@ export class SwitchNMotionAccessory {
 
       // if the switch was turned off
       } else {
-        // turn on the motion listener ignore switch
-        motionListenerIgnoreSwitch.onState = true;
+        // turn on the motion listener ignore timer switch
+        motionListenerIgnoreTimerSwitch.onState = true;
 
         // execute the turn off action
         this.executeMasterControlOff();
@@ -543,7 +558,8 @@ export class SwitchNMotionAccessory {
     if (sceneSensor) {
       sceneSensor.onState = false;
     }
-     
+
+    this.reconcileUserSceneSwitches();
   }
 
 
@@ -558,7 +574,7 @@ export class SwitchNMotionAccessory {
 
       // if there's none, turn on the first one
       if (!userSceneSwitch) {
-        this.userSceneSwitches[0].onState = true;
+        this.turnOnOneExclusiveUserSceneSwitch(0);
       }
     });
   }
@@ -644,7 +660,9 @@ enum ServiceCodes {
   MasterControlSwitch = 'control-switch',
   NightLightControlSwitch = 'night-light-switch',
   UserSceneSwitch = 'user-scene-switch',
-  MotionListenerIgnoreSwitch = 'control-switch-off-ignore-motion-listener-switch',
+
+  MotionListenerIgnoreSwitch = 'motion-listener-ignore-switch',
+  MotionListenerIgnoreTimerSwitch = 'control-switch-off-ignore-motion-listener-switch',
 
   OffSceneSensor = 'off-scene-occupancy-sensor',
   NightLightSceneSensor = 'night-light-scene-occupancy-sensor',

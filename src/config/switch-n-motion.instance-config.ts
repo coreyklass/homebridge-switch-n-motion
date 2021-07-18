@@ -11,6 +11,8 @@ export interface SwitchNMonitorInstanceConfig {
 
   masterControlSwitchName: string;
   controlSwitchAutoOffTimerMS: number;
+
+  useMotionListenerFlag: boolean;
   motionListenerIgnoreSwitchName: string;
   motionListenerIgnoreSwitchTimerMS: number;
 

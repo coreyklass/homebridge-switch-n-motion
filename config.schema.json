@@ -45,6 +45,13 @@
               "required": true
             },
 
+            "useMotionListenerFlag": {
+              "title": "Use Motion Listener Trigger?",
+              "description": "Turn on if you would like to use a motion sensor as a trigger",
+              "type": "boolean",
+              "default": true
+            },
+
             "motionListenerTriggerSwitch": {
               "title": "Motion Listener Trigger Switch Name",
               "description": "Create a HomeKit automation to turn this switch ON when your motion sensor is triggered (it will automatically turn off). Turning this switch ON will turn the Control Switch ON.",

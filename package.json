@@ -2,7 +2,7 @@
   "private": true,
   "displayName": "Homebridge Switch n Motion",
   "name": "homebridge-plugin-switch-n-motion",
-  "version": "0.0.13",
+  "version": "0.0.15",
   "description": "Homebridge Switch n Motion",
   "license": "Apache-2.0",
   "repository": {

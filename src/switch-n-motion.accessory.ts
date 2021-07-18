@@ -91,39 +91,48 @@ export class SwitchNMotionAccessory {
 
 
     // configure the motion sensor trigger switch
-    const motionListenerTriggerSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
-        ServiceCodes.MotionTriggerSwitch,
-        ServiceCodes.MotionTriggerSwitch,
-        platform.api.hap.Service.Switch
-    );
+    let motionListenerTriggerSwitch: OnOffServiceHelper | null = null;
+    let motionListenerIgnoreSwitch: OnOffServiceHelper | null = null;
+    let motionListenerIgnoreTimerSwitch: OnOffServiceHelper | null = null;
 
-    motionListenerTriggerSwitch.serviceDisplayName = config.motionListenerTriggerSwitch;
-    motionListenerTriggerSwitch.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
+    if (config.useMotionListenerFlag) {
+      motionListenerTriggerSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
+          ServiceCodes.MotionTriggerSwitch,
+          ServiceCodes.MotionTriggerSwitch,
+          platform.api.hap.Service.Switch
+      );
 
-
-
-
-
-    // configure the motion sensor listener ignore switch
-    const motionListenerIgnoreSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
-        ServiceCodes.MotionListenerIgnoreSwitch,
-        ServiceCodes.MotionListenerIgnoreSwitch,
-        platform.api.hap.Service.Switch
-    );
-
-    motionListenerIgnoreSwitch.serviceDisplayName = config.motionListenerIgnoreSwitchName;
+      motionListenerTriggerSwitch.serviceDisplayName = config.motionListenerTriggerSwitch;
+      motionListenerTriggerSwitch.autoOffTimerMS = this.statelessSwitchAutoOffTimerMS;
 
 
+      // configure the motion sensor listener ignore switch
+      motionListenerIgnoreSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
+          ServiceCodes.MotionListenerIgnoreSwitch,
+          ServiceCodes.MotionListenerIgnoreSwitch,
+          platform.api.hap.Service.Switch
+      );
 
-    // configure the motion sensor listener ignore timer switch
-    const motionListenerIgnoreTimerSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
-        ServiceCodes.MotionListenerIgnoreTimerSwitch,
-        ServiceCodes.MotionListenerIgnoreTimerSwitch,
-        platform.api.hap.Service.Switch
-    );
+      motionListenerIgnoreSwitch.serviceDisplayName = config.motionListenerIgnoreSwitchName;
 
-    motionListenerIgnoreTimerSwitch.serviceDisplayName = config.motionListenerIgnoreSwitchName + ' Timer';
-    motionListenerIgnoreTimerSwitch.autoOffTimerMS = config.motionListenerIgnoreSwitchTimerMS;
+
+      // configure the motion sensor listener ignore timer switch
+      motionListenerIgnoreTimerSwitch = this.serviceHelperCollection.newOnOffServiceHelper(
+          ServiceCodes.MotionListenerIgnoreTimerSwitch,
+          ServiceCodes.MotionListenerIgnoreTimerSwitch,
+          platform.api.hap.Service.Switch
+      );
+
+      motionListenerIgnoreTimerSwitch.serviceDisplayName = config.motionListenerIgnoreSwitchName + ' Timer';
+      motionListenerIgnoreTimerSwitch.autoOffTimerMS = config.motionListenerIgnoreSwitchTimerMS;
+    }
+
+
+
+
+
+
+
 
 
 
@@ -295,23 +304,25 @@ export class SwitchNMotionAccessory {
 
 
     // motion trigger flips the master control switch state
-    motionListenerTriggerSwitch.registerStateChangeHandler((value: boolean) => {
-      // if occupancy turned on
-      if (value) {
-        const ignoreMotionFlag =
-            motionListenerIgnoreSwitch.onState ||
-            motionListenerIgnoreTimerSwitch.onState;
+    if (motionListenerTriggerSwitch) {
+      motionListenerTriggerSwitch.registerStateChangeHandler((value: boolean) => {
+        // if occupancy turned on
+        if (value) {
+          const ignoreMotionFlag =
+              (motionListenerIgnoreSwitch ? motionListenerIgnoreSwitch.onState : false) ||
+              (motionListenerIgnoreTimerSwitch ? motionListenerIgnoreTimerSwitch.onState : false);
 
-        // if the master control switch is not on and the motion listener ignore switch is not on
-        //   eg. we're ignoring the motion sensor for X time
-        if (!masterControlSwitch.onState && !ignoreMotionFlag) {
-          masterControlSwitch.onState = true;
+          // if the master control switch is not on and the motion listener ignore switch is not on
+          //   eg. we're ignoring the motion sensor for X time
+          if (!masterControlSwitch.onState && !ignoreMotionFlag) {
+            masterControlSwitch.onState = true;
 
-          // reconcile the occupancy sensors
-          this.reconcileUserSceneSensors();
+            // reconcile the occupancy sensors
+            this.reconcileUserSceneSensors();
+          }
         }
-      }
-    });
+      });
+    }
 
 
 
@@ -359,7 +370,9 @@ export class SwitchNMotionAccessory {
       // if the switch was turned off
       } else {
         // turn on the motion listener ignore timer switch
-        motionListenerIgnoreTimerSwitch.onState = true;
+        if (motionListenerIgnoreTimerSwitch) {
+          motionListenerIgnoreTimerSwitch.onState = true;
+        }
 
         // execute the turn off action
         this.executeMasterControlOff();
